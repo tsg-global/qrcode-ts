@@ -1,4 +1,159 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
+var qr_code_1 = require("qrcode/qr_code");
+window.QRCode = qr_code_1["default"];
+
+},{"qrcode/qr_code":6}],2:[function(require,module,exports){
+"use strict";
+var SvgDrawing = (function () {
+    function SvgDrawing(el, htOption) {
+        this._el = el;
+        this._htOption = htOption;
+    }
+    SvgDrawing.prototype.draw = function (oQRCode) {
+        var _htOption = this._htOption;
+        var _el = this._el;
+        var nCount = oQRCode.getModuleCount();
+        var nWidth = Math.floor(_htOption.width / nCount);
+        var nHeight = Math.floor(_htOption.height / nCount);
+        this.clear();
+        function makeSVG(tag, attrs) {
+            var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (var k in attrs)
+                if (attrs.hasOwnProperty(k))
+                    el.setAttribute(k, attrs[k]);
+            return el;
+        }
+        var svg = makeSVG("svg", { 'viewBox': '0 0 ' + String(nCount) + " " + String(nCount), 'width': '100%', 'height': '100%', 'fill': _htOption.colorLight });
+        svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+        _el.appendChild(svg);
+        svg.appendChild(makeSVG("rect", { "fill": _htOption.colorLight, "width": "100%", "height": "100%" }));
+        svg.appendChild(makeSVG("rect", { "fill": _htOption.colorDark, "width": "1", "height": "1", "id": "template" }));
+        for (var row = 0; row < nCount; row++) {
+            for (var col = 0; col < nCount; col++) {
+                if (oQRCode.isDark(row, col)) {
+                    var child = makeSVG("use", { "x": String(col), "y": String(row) });
+                    child.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#template");
+                    svg.appendChild(child);
+                }
+            }
+        }
+    };
+    SvgDrawing.prototype.clear = function () {
+        while (this._el.hasChildNodes())
+            this._el.removeChild(this._el.lastChild);
+    };
+    ;
+    return SvgDrawing;
+}());
+exports.__esModule = true;
+exports["default"] = SvgDrawing;
+
+},{}],3:[function(require,module,exports){
+"use strict";
+// android 2.x doesn't support Data-URI spec
+function getAndroidVersion() {
+    var android = false;
+    var sAgent = navigator.userAgent;
+    if (/android/i.test(sAgent)) {
+        android = true;
+        var aMat = sAgent.toString().match(/android ([0-9]\.[0-9])/i);
+        if (aMat && aMat[1]) {
+            android = parseFloat(aMat[1]);
+        }
+    }
+    return android;
+}
+exports.getAndroidVersion = getAndroidVersion;
+;
+
+},{}],4:[function(require,module,exports){
+"use strict";
+var qr_mode_1 = require("qrcode/qr_mode");
+var QR8bitByte = (function () {
+    function QR8bitByte(data) {
+        this.mode = qr_mode_1["default"].MODE_8BIT_BYTE;
+        this.data = data;
+        // Added to support UTF-8 Characters
+        for (var i = 0, l = this.data.length; i < l; i++) {
+            var byteArray = [];
+            var code = this.data.charCodeAt(i);
+            if (code > 0x10000) {
+                byteArray[0] = 0xF0 | ((code & 0x1C0000) >>> 18);
+                byteArray[1] = 0x80 | ((code & 0x3F000) >>> 12);
+                byteArray[2] = 0x80 | ((code & 0xFC0) >>> 6);
+                byteArray[3] = 0x80 | (code & 0x3F);
+            }
+            else if (code > 0x800) {
+                byteArray[0] = 0xE0 | ((code & 0xF000) >>> 12);
+                byteArray[1] = 0x80 | ((code & 0xFC0) >>> 6);
+                byteArray[2] = 0x80 | (code & 0x3F);
+            }
+            else if (code > 0x80) {
+                byteArray[0] = 0xC0 | ((code & 0x7C0) >>> 6);
+                byteArray[1] = 0x80 | (code & 0x3F);
+            }
+            else {
+                byteArray[0] = code;
+            }
+            this.parsedData.push(byteArray);
+        }
+        this.parsedData = Array.prototype.concat.apply([], this.parsedData);
+        if (this.parsedData.length != this.data.length) {
+            this.parsedData.unshift(191);
+            this.parsedData.unshift(187);
+            this.parsedData.unshift(239);
+        }
+    }
+    QR8bitByte.prototype.getLength = function (buffer) {
+        return this.parsedData.length;
+    };
+    QR8bitByte.prototype.write = function (buffer) {
+        for (var i = 0, l = this.parsedData.length; i < l; i++) {
+            buffer.put(this.parsedData[i], 8);
+        }
+    };
+    return QR8bitByte;
+}());
+exports.__esModule = true;
+exports["default"] = QR8bitByte;
+
+},{"qrcode/qr_mode":12}],5:[function(require,module,exports){
+"use strict";
+var QRBitBuffer = (function () {
+    function QRBitBuffer() {
+        this.buffer = [];
+        this.length = 0;
+    }
+    QRBitBuffer.prototype.get = function (index) {
+        var bufIndex = Math.floor(index / 8);
+        return ((this.buffer[bufIndex] >>> (7 - index % 8)) & 1) == 1;
+    };
+    QRBitBuffer.prototype.put = function (num, length) {
+        for (var i = 0; i < length; i++) {
+            this.putBit(((num >>> (length - i - 1)) & 1) == 1);
+        }
+    };
+    QRBitBuffer.prototype.getLengthInBits = function () {
+        return this.length;
+    };
+    QRBitBuffer.prototype.putBit = function (bit) {
+        var bufIndex = Math.floor(this.length / 8);
+        if (this.buffer.length <= bufIndex) {
+            this.buffer.push(0);
+        }
+        if (bit) {
+            this.buffer[bufIndex] |= (0x80 >>> (this.length % 8));
+        }
+        this.length++;
+    };
+    return QRBitBuffer;
+}());
+exports.__esModule = true;
+exports["default"] = QRBitBuffer;
+
+},{}],6:[function(require,module,exports){
+"use strict";
 //---------------------------------------------------------------------
 // QRCode for JavaScript
 //
@@ -161,156 +316,12 @@ var QRCode = (function () {
      */
     QRCode.CorrectLevel = qr_error_correct_level_1["default"];
     return QRCode;
-})();
+}());
 exports.__esModule = true;
 exports["default"] = QRCode;
 
-},{"qrcode/drawing/svg":2,"qrcode/platform":3,"qrcode/qr_code_limit_length":6,"qrcode/qr_code_model":7,"qrcode/qr_error_correct_level":8}],2:[function(require,module,exports){
-var SvgDrawing = (function () {
-    function SvgDrawing(el, htOption) {
-        this._el = el;
-        this._htOption = htOption;
-    }
-    SvgDrawing.prototype.draw = function (oQRCode) {
-        var _htOption = this._htOption;
-        var _el = this._el;
-        var nCount = oQRCode.getModuleCount();
-        var nWidth = Math.floor(_htOption.width / nCount);
-        var nHeight = Math.floor(_htOption.height / nCount);
-        this.clear();
-        function makeSVG(tag, attrs) {
-            var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-            for (var k in attrs)
-                if (attrs.hasOwnProperty(k))
-                    el.setAttribute(k, attrs[k]);
-            return el;
-        }
-        var svg = makeSVG("svg", { 'viewBox': '0 0 ' + String(nCount) + " " + String(nCount), 'width': '100%', 'height': '100%', 'fill': _htOption.colorLight });
-        svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
-        _el.appendChild(svg);
-        svg.appendChild(makeSVG("rect", { "fill": _htOption.colorLight, "width": "100%", "height": "100%" }));
-        svg.appendChild(makeSVG("rect", { "fill": _htOption.colorDark, "width": "1", "height": "1", "id": "template" }));
-        for (var row = 0; row < nCount; row++) {
-            for (var col = 0; col < nCount; col++) {
-                if (oQRCode.isDark(row, col)) {
-                    var child = makeSVG("use", { "x": String(col), "y": String(row) });
-                    child.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#template");
-                    svg.appendChild(child);
-                }
-            }
-        }
-    };
-    SvgDrawing.prototype.clear = function () {
-        while (this._el.hasChildNodes())
-            this._el.removeChild(this._el.lastChild);
-    };
-    ;
-    return SvgDrawing;
-})();
-exports.__esModule = true;
-exports["default"] = SvgDrawing;
-
-},{}],3:[function(require,module,exports){
-// android 2.x doesn't support Data-URI spec
-function getAndroidVersion() {
-    var android = false;
-    var sAgent = navigator.userAgent;
-    if (/android/i.test(sAgent)) {
-        android = true;
-        var aMat = sAgent.toString().match(/android ([0-9]\.[0-9])/i);
-        if (aMat && aMat[1]) {
-            android = parseFloat(aMat[1]);
-        }
-    }
-    return android;
-}
-exports.getAndroidVersion = getAndroidVersion;
-;
-
-},{}],4:[function(require,module,exports){
-var qr_mode_1 = require("qrcode/qr_mode");
-var QR8bitByte = (function () {
-    function QR8bitByte(data) {
-        this.mode = qr_mode_1["default"].MODE_8BIT_BYTE;
-        this.data = data;
-        // Added to support UTF-8 Characters
-        for (var i = 0, l = this.data.length; i < l; i++) {
-            var byteArray = [];
-            var code = this.data.charCodeAt(i);
-            if (code > 0x10000) {
-                byteArray[0] = 0xF0 | ((code & 0x1C0000) >>> 18);
-                byteArray[1] = 0x80 | ((code & 0x3F000) >>> 12);
-                byteArray[2] = 0x80 | ((code & 0xFC0) >>> 6);
-                byteArray[3] = 0x80 | (code & 0x3F);
-            }
-            else if (code > 0x800) {
-                byteArray[0] = 0xE0 | ((code & 0xF000) >>> 12);
-                byteArray[1] = 0x80 | ((code & 0xFC0) >>> 6);
-                byteArray[2] = 0x80 | (code & 0x3F);
-            }
-            else if (code > 0x80) {
-                byteArray[0] = 0xC0 | ((code & 0x7C0) >>> 6);
-                byteArray[1] = 0x80 | (code & 0x3F);
-            }
-            else {
-                byteArray[0] = code;
-            }
-            this.parsedData.push(byteArray);
-        }
-        this.parsedData = Array.prototype.concat.apply([], this.parsedData);
-        if (this.parsedData.length != this.data.length) {
-            this.parsedData.unshift(191);
-            this.parsedData.unshift(187);
-            this.parsedData.unshift(239);
-        }
-    }
-    QR8bitByte.prototype.getLength = function (buffer) {
-        return this.parsedData.length;
-    };
-    QR8bitByte.prototype.write = function (buffer) {
-        for (var i = 0, l = this.parsedData.length; i < l; i++) {
-            buffer.put(this.parsedData[i], 8);
-        }
-    };
-    return QR8bitByte;
-})();
-exports.__esModule = true;
-exports["default"] = QR8bitByte;
-
-},{"qrcode/qr_mode":11}],5:[function(require,module,exports){
-var QRBitBuffer = (function () {
-    function QRBitBuffer() {
-        this.buffer = [];
-        this.length = 0;
-    }
-    QRBitBuffer.prototype.get = function (index) {
-        var bufIndex = Math.floor(index / 8);
-        return ((this.buffer[bufIndex] >>> (7 - index % 8)) & 1) == 1;
-    };
-    QRBitBuffer.prototype.put = function (num, length) {
-        for (var i = 0; i < length; i++) {
-            this.putBit(((num >>> (length - i - 1)) & 1) == 1);
-        }
-    };
-    QRBitBuffer.prototype.getLengthInBits = function () {
-        return this.length;
-    };
-    QRBitBuffer.prototype.putBit = function (bit) {
-        var bufIndex = Math.floor(this.length / 8);
-        if (this.buffer.length <= bufIndex) {
-            this.buffer.push(0);
-        }
-        if (bit) {
-            this.buffer[bufIndex] |= (0x80 >>> (this.length % 8));
-        }
-        this.length++;
-    };
-    return QRBitBuffer;
-})();
-exports.__esModule = true;
-exports["default"] = QRBitBuffer;
-
-},{}],6:[function(require,module,exports){
+},{"qrcode/drawing/svg":2,"qrcode/platform":3,"qrcode/qr_code_limit_length":7,"qrcode/qr_code_model":8,"qrcode/qr_error_correct_level":9}],7:[function(require,module,exports){
+"use strict";
 exports.__esModule = true;
 exports["default"] = [
     [17, 14, 11, 7],
@@ -355,7 +366,8 @@ exports["default"] = [
     [2953, 2331, 1663, 1273]
 ];
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
+"use strict";
 var qr_8bit_byte_1 = require("qrcode/qr_8bit_byte");
 var qr_bit_buffer_1 = require("qrcode/qr_bit_buffer");
 var qr_polynomial_1 = require("qrcode/qr_polynomial");
@@ -657,11 +669,12 @@ var QRCodeModel = (function () {
     QRCodeModel.PAD0 = 0xEC;
     QRCodeModel.PAD1 = 0x11;
     return QRCodeModel;
-})();
+}());
 exports.__esModule = true;
 exports["default"] = QRCodeModel;
 
-},{"qrcode/qr_8bit_byte":4,"qrcode/qr_bit_buffer":5,"qrcode/qr_polynomial":12,"qrcode/qr_rs_block":13,"qrcode/qr_util":14}],8:[function(require,module,exports){
+},{"qrcode/qr_8bit_byte":4,"qrcode/qr_bit_buffer":5,"qrcode/qr_polynomial":13,"qrcode/qr_rs_block":14,"qrcode/qr_util":15}],9:[function(require,module,exports){
+"use strict";
 exports.__esModule = true;
 exports["default"] = {
     L: 1,
@@ -670,7 +683,8 @@ exports["default"] = {
     H: 2
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
+"use strict";
 exports.__esModule = true;
 exports["default"] = {
     PATTERN000: 0,
@@ -683,7 +697,8 @@ exports["default"] = {
     PATTERN111: 7
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
+"use strict";
 var QRMath = (function () {
     function QRMath() {
     }
@@ -705,7 +720,7 @@ var QRMath = (function () {
     QRMath.EXP_TABLE = new Array(256);
     QRMath.LOG_TABLE = new Array(256);
     return QRMath;
-})();
+}());
 exports.__esModule = true;
 exports["default"] = QRMath;
 ;
@@ -719,7 +734,8 @@ for (var i = 0; i < 255; i++) {
     QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]] = i;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
+"use strict";
 exports.__esModule = true;
 exports["default"] = {
     MODE_NUMBER: 1 << 0,
@@ -728,7 +744,8 @@ exports["default"] = {
     MODE_KANJI: 1 << 3
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
+"use strict";
 var qr_math_1 = require("qrcode/qr_math");
 var QRPolynomial = (function () {
     function QRPolynomial(num, shift) {
@@ -774,11 +791,12 @@ var QRPolynomial = (function () {
         return new QRPolynomial(num, 0).mod(e);
     };
     return QRPolynomial;
-})();
+}());
 exports.__esModule = true;
 exports["default"] = QRPolynomial;
 
-},{"qrcode/qr_math":10}],13:[function(require,module,exports){
+},{"qrcode/qr_math":11}],14:[function(require,module,exports){
+"use strict";
 var qr_error_correct_level_1 = require("qrcode/qr_error_correct_level");
 var QRRSBlock = (function () {
     function QRRSBlock(totalCount, dataCount) {
@@ -979,11 +997,12 @@ var QRRSBlock = (function () {
         [20, 45, 15, 61, 46, 16]
     ];
     return QRRSBlock;
-})();
+}());
 exports.__esModule = true;
 exports["default"] = QRRSBlock;
 
-},{"qrcode/qr_error_correct_level":8}],14:[function(require,module,exports){
+},{"qrcode/qr_error_correct_level":9}],15:[function(require,module,exports){
+"use strict";
 var qr_mask_pattern_1 = require("qrcode/qr_mask_pattern");
 var qr_math_1 = require("qrcode/qr_math");
 var qr_mode_1 = require("qrcode/qr_mode");
@@ -1209,7 +1228,7 @@ var QRUtil = {
 exports.__esModule = true;
 exports["default"] = QRUtil;
 
-},{"qrcode/qr_mask_pattern":9,"qrcode/qr_math":10,"qrcode/qr_mode":11,"qrcode/qr_polynomial":12}]},{},[1])
+},{"qrcode/qr_mask_pattern":10,"qrcode/qr_math":11,"qrcode/qr_mode":12,"qrcode/qr_polynomial":13}]},{},[1])
 
 
 //# sourceMappingURL=qrcode.js.map
