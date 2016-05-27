@@ -1,0 +1,33 @@
+{
+  "name": "qrcode-ts",
+  "version": "0.0.1",
+  "description": "A fork of QRCode.js converted to Typescript",
+  "main": "Gulpfile.js",
+  "dependencies": {
+    "browserify": "^13.0.1",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.3",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsg-global/qrcode-ts.git"
+  },
+  "keywords": [
+    "qrcode",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tsg-global/qrcode-ts/issues"
+  },
+  "homepage": "https://github.com/tsg-global/qrcode-ts#readme"
+}
