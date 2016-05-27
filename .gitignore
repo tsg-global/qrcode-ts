@@ -4,3 +4,4 @@
 .project
 /node_modules
 /lib
+/dist/js/*.map
