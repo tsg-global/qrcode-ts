@@ -126,22 +126,22 @@ export default class QRCode {
 	 * @param {String} [vOption.colorLight="#ffffff"]
 	 * @param {QRCode.CorrectLevel} [vOption.correctLevel=QRCode.CorrectLevel.H] [L|M|Q|H]
 	 */
-	constructor(el, vOption: any) {
+	constructor(el: HTMLElement | string, vOption: IQRCodeOptions | string) {
 		if (typeof vOption === 'string') {
-			vOption = {
+			vOption = <any>{
 				text: vOption
 			};
 		}
 
 		// Overwrites options
 		if (vOption) {
-			for (let key in vOption) {
+			for (let key in <IQRCodeOptions>vOption) {
 				this._htOption[key] = vOption[key];
 			}
 		}
 
-		if (typeof el == "string") {
-			el = document.getElementById(el);
+		if (typeof el === "string") {
+			el = document.getElementById(<string>el);
 		}
 
 		if (this._htOption.useSVG) {
@@ -149,7 +149,7 @@ export default class QRCode {
 		}
 
 		this._android = _getAndroid();
-		this._el = el;
+		this._el = <HTMLElement>el;
 		this._oDrawing = new this.drawing(this._el, this._htOption);
 
 		if (this._htOption.text) {

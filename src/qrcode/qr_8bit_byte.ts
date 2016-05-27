@@ -1,11 +1,12 @@
 import QRMode from "qrcode/qr_mode";
+import QRBitBuffer from "qrcode/qr_bit_buffer";
 
 export default class QR8bitByte {
 	public mode = QRMode.MODE_8BIT_BYTE;
-	public data: any;
+	public data: string;
 	private parsedData: Array<any> = [];
 
-	constructor(data) {
+	constructor(data: string) {
 		this.data = data;
 
 		// Added to support UTF-8 Characters
@@ -41,11 +42,11 @@ export default class QR8bitByte {
 		}
 	}
 
-	public getLength(buffer) {
+	public getLength(buffer: QRBitBuffer) {
 		return this.parsedData.length;
 	}
 
-	public write(buffer) {
+	public write(buffer: QRBitBuffer) {
 		for (var i = 0, l = this.parsedData.length; i < l; i++) {
 			buffer.put(this.parsedData[i], 8);
 		}

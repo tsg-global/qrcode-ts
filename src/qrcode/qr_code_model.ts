@@ -15,7 +15,7 @@ export default class QRCodeModel {
 	private errorCorrectLevel: number;
 	private dataCache: Array<number>;
 
-	constructor(typeNumber, errorCorrectLevel) {
+	constructor(typeNumber: number, errorCorrectLevel: number) {
 		this.typeNumber = typeNumber;
 		this.errorCorrectLevel = errorCorrectLevel;
 		this.modules = null;
@@ -24,13 +24,13 @@ export default class QRCodeModel {
 		this.dataList = [];
 	}
 
-	public addData(data) {
-		var newData = new QR8bitByte(data);
+	public addData(data: string) {
+		const newData = new QR8bitByte(data);
 		this.dataList.push(newData);
 		this.dataCache = null;
 	}
 
-	public isDark(row, col) {
+	public isDark(row: number, col: number) {
 		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
 			throw new Error(row + "," + col); }
 		return this.modules[row][col];
@@ -44,7 +44,34 @@ export default class QRCodeModel {
 		this.makeImpl(false, this.getBestMaskPattern());
 	}
 
-	public makeImpl(test, maskPattern) {
+	private setupTypeNumber(test: boolean) {
+		const bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+		for (let i = 0; i < 18; i++) {
+			const mod = (!test && ((bits >> i) & 1) == 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+
+		for (let i = 0; i < 18; i++) {
+			const mod = (!test && ((bits >> i) & 1) == 1);
+			this.modules[i % 3 + this.moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+		}
+	}
+
+	public setupTypeInfo(test: boolean, maskPattern: number) {
+		const data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+		for (var i = 0; i < 15; i++) {
+			var mod = (!test && ((bits >> i) & 1) == 1);
+			if (i < 6) { this.modules[i][8] = mod; } else if (i < 8) { this.modules[i + 1][8] = mod; } else { this.modules[this.moduleCount - 15 + i][8] = mod; }
+		}
+		for (var i = 0; i < 15; i++) {
+			var mod = (!test && ((bits >> i) & 1) == 1);
+			if (i < 8) { this.modules[8][this.moduleCount - i - 1] = mod; } else if (i < 9) { this.modules[8][15 - i - 1 + 1] = mod; } else { this.modules[8][15 - i - 1] = mod; }
+		}
+		this.modules[this.moduleCount - 8][8] = (!test);
+	}
+
+	public makeImpl(test: boolean, maskPattern: number) {
 		this.moduleCount = this.typeNumber * 4 + 17;
 		this.modules = new Array(this.moduleCount);
 		for (let row = 0; row < this.moduleCount; row++) {
@@ -66,7 +93,7 @@ export default class QRCodeModel {
 		this.mapData(this.dataCache, maskPattern);
 	}
 
-	public setupPositionProbePattern(row, col) {
+	public setupPositionProbePattern(row: number, col: number) {
 		for (let r = -1; r <= 7; r++) {
 			if (row + r <= -1 || this.moduleCount <= row + r) continue;
 			for (let c = -1; c <= 7; c++) {
@@ -96,32 +123,34 @@ export default class QRCodeModel {
 	}
 
 	public createMovieClip(target_mc, instance_name, depth) {
-		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
-		var cs = 1;
+		const qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		const cs = 1;
 		this.make();
-		for (var row = 0; row < this.modules.length; row++) {
-			var y = row * cs;
-			for (var col = 0; col < this.modules[row].length; col++) {
-				var x = col * cs;
-				var dark = this.modules[row][col];
-				if (dark) { qr_mc.beginFill(0, 100);
+		for (let row = 0; row < this.modules.length; row++) {
+			const y = row * cs;
+			for (let col = 0; col < this.modules[row].length; col++) {
+				const x = col * cs;
+				const dark = this.modules[row][col];
+				if (dark) {
+					qr_mc.beginFill(0, 100);
 					qr_mc.moveTo(x, y);
 					qr_mc.lineTo(x + cs, y);
 					qr_mc.lineTo(x + cs, y + cs);
 					qr_mc.lineTo(x, y + cs);
-					qr_mc.endFill(); } } }
+					qr_mc.endFill();
+				}
+			}
+		}
 		return qr_mc;
 	}
 
-	setupTimingPattern() {
+	public setupTimingPattern() {
 		for (var r = 8; r < this.moduleCount - 8; r++) {
-			if (this.modules[r][6] != null) {
-				continue; }
+			if (this.modules[r][6] != null) continue;
 			this.modules[r][6] = (r % 2 == 0);
 		}
 		for (var c = 8; c < this.moduleCount - 8; c++) {
-			if (this.modules[6][c] != null) {
-				continue; }
+			if (this.modules[6][c] != null) continue;
 			this.modules[6][c] = (c % 2 == 0);
 		}
 	}
@@ -147,31 +176,6 @@ export default class QRCodeModel {
 		}
 	}
 
-	public setupTypeNumber(test) {
-		const bits = QRUtil.getBCHTypeNumber(this.typeNumber);
-		for (let i = 0; i < 18; i++) {
-			const mod = (!test && ((bits >> i) & 1) == 1);
-			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
-		}
-
-		for (let i = 0; i < 18; i++) {
-			const mod = (!test && ((bits >> i) & 1) == 1);
-			this.modules[i % 3 + this.moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
-		}
-	}
-
-	public setupTypeInfo(test, maskPattern) {
-		const data = (this.errorCorrectLevel << 3) | maskPattern;
-		var bits = QRUtil.getBCHTypeInfo(data);
-		for (var i = 0; i < 15; i++) {
-			var mod = (!test && ((bits >> i) & 1) == 1);
-			if (i < 6) { this.modules[i][8] = mod; } else if (i < 8) { this.modules[i + 1][8] = mod; } else { this.modules[this.moduleCount - 15 + i][8] = mod; } }
-		for (var i = 0; i < 15; i++) {
-			var mod = (!test && ((bits >> i) & 1) == 1);
-			if (i < 8) { this.modules[8][this.moduleCount - i - 1] = mod; } else if (i < 9) { this.modules[8][15 - i - 1 + 1] = mod; } else { this.modules[8][15 - i - 1] = mod; } }
-		this.modules[this.moduleCount - 8][8] = (!test);
-	}
-
 	public mapData(data, maskPattern) {
 		var inc = -1;
 		var row = this.moduleCount - 1;
@@ -193,9 +197,11 @@ export default class QRCodeModel {
 					}
 				}
 				row += inc;
-				if (row < 0 || this.moduleCount <= row) { row -= inc;
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
 					inc = -inc;
-					break; }
+					break;
+				}
 			}
 		}
 	}

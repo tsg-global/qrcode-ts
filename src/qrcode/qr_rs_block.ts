@@ -167,12 +167,12 @@ export default class QRRSBlock {
     public totalCount: number;
     public dataCount: number;
 
-    constructor(totalCount, dataCount) {
+    constructor(totalCount: number, dataCount: number) {
         this.totalCount = totalCount;
         this.dataCount = dataCount;
     }
 
-    public static getRSBlocks(typeNumber, errorCorrectLevel) {
+    public static getRSBlocks(typeNumber: number, errorCorrectLevel: number) {
         var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
         if (rsBlock == undefined) {
             throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
@@ -188,7 +188,7 @@ export default class QRRSBlock {
         return list;
     }
 
-    public static getRsBlockTable(typeNumber, errorCorrectLevel) {
+    public static getRsBlockTable(typeNumber: number, errorCorrectLevel: number) {
         switch (errorCorrectLevel) {
             case QRErrorCorrectLevel.L:
                 return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
