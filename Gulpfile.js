@@ -1,5 +1,6 @@
 'use strict';
 
+const typescript = require('gulp-typescript');
 const browserify = require('browserify');
 const gulp = require('gulp');
 const source = require('vinyl-source-stream');
@@ -10,14 +11,21 @@ const gutil = require('gulp-util');
 const grename = require('gulp-rename');
 
 gulp.task('build', function() {
-
+	return gulp.src('./src/**/*.ts')
+		.pipe(typescript({
+			"module": "commonjs",
+			"target": "es3",
+			"noImplicitAny": false,
+			"sourceMap": true
+		}))
+		.pipe(gulp.dest('./lib'));
 });
 
-gulp.task('js', function() {
+gulp.task('js', ['build'], function() {
   // set up the browserify instance on a task basis
   var b = browserify({
 	paths: ['lib'],
-	entries: './lib/qr_code.js',
+	entries: './lib/qrcode.js',
 	debug: true
   });
 
@@ -29,7 +37,7 @@ gulp.task('js', function() {
 	.pipe(gulp.dest('./dist/js/'));
 });
 
-gulp.task('minify', function() {
+gulp.task('minify', ['js'], function() {
 	return gulp.src('./dist/js/qrcode.js')
 		.pipe(uglify().on('error', gutil.log))
 		.pipe(grename({ suffix: '.min' }))
