@@ -3,7 +3,7 @@ import QRMode from "qrcode/qr_mode";
 export default class QR8bitByte {
 	public mode = QRMode.MODE_8BIT_BYTE;
 	public data: any;
-	private parsedData: Array<any>;
+	private parsedData: Array<any> = [];
 
 	constructor(data) {
 		this.data = data;

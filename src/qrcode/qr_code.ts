@@ -111,7 +111,7 @@ export default class QRCode {
 		correctLevel: QRErrorCorrectLevel.H,
 	};
 	private _el: HTMLElement;
-	private drawing;
+	private drawing: any = Drawing;
 	private _oDrawing;
 	private _android: boolean|number;
 	private _oQRCode: QRCodeModel = null;

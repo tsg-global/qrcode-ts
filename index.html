@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script type="text/javascript" src="jquery.min.js"></script>
-<script type="text/javascript" src="qrcode.js"></script>
+<script type="text/javascript" src="dist/js/qrcode.js"></script>
 </head>
 <body>
 <input id="text" type="text" value="http://jindo.dev.naver.com/collie" style="width:80%" /><br />
@@ -17,15 +17,15 @@ var qrcode = new QRCode(document.getElementById("qrcode"), {
 	height : 100
 });
 
-function makeCode () {		
+function makeCode () {
 	var elText = document.getElementById("text");
-	
+
 	if (!elText.value) {
 		alert("Input a text");
 		elText.focus();
 		return;
 	}
-	
+
 	qrcode.makeCode(elText.value);
 }
 
