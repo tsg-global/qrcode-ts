@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "amd",
         "target": "es3",
         "noImplicitAny": false,
         "outDir": "lib",
