@@ -69,7 +69,7 @@ function _getTypeNumber(sText, nCorrectLevel) {
 	return nType;
 }
 
-interface IQRCodeOptions {
+export interface IQRCodeOptions {
 	width?: number;
 	height?: number;
 	typeNumber?: number;
@@ -126,7 +126,7 @@ export default class QRCode {
 	 * @param {String} [vOption.colorLight="#ffffff"]
 	 * @param {QRCode.CorrectLevel} [vOption.correctLevel=QRCode.CorrectLevel.H] [L|M|Q|H]
 	 */
-	constructor(el: HTMLElement | string, vOption: IQRCodeOptions | string) {
+	constructor(el: HTMLElement | string, vOption?: IQRCodeOptions | string) {
 		if (typeof vOption === 'string') {
 			vOption = <any>{
 				text: vOption
